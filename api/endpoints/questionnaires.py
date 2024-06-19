@@ -99,3 +99,21 @@ async def update_score(id: int, req: UpdateScoreRequest, db: Session = Depends(g
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail="An unexpected error occurred: " + str(e))
+
+@router.delete('/delete/{id}')
+async def delete_questionnaire(id: int, db: Session = Depends(get_db)):
+    try:
+        questionnaire = db.query(Questionnaire).filter(Questionnaire.id == id).first()
+        if not questionnaire:
+            raise HTTPException(status_code=404, detail="Questionnaire not found")
+
+        db.delete(questionnaire)
+        db.commit()
+
+        return {'res': 'Questionnaire deleted'}
+    except DatabaseError as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Database error: " + str(e))
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="An unexpected error occurred: " + str(e))
