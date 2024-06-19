@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from sqlalchemy.exc import DatabaseError
+from sqlalchemy.exc import DatabaseError, IntegrityError
 from sqlalchemy.orm import Session
 from fastapi import Depends
 
@@ -27,21 +27,27 @@ def get_db():
 
 @router.post('/create')
 async def create_user(user: CreateUser, db: Session = Depends(get_db)) -> dict:
+    new_user = User(
+        username=user.username,
+        name=user.name,
+        email=user.email,
+        password=user.password  # Asegúrate de hash la contraseña antes de guardarla
+    )
+
     try:
-        new_user = User(
-            username=user.username,
-            name=user.name,
-            password=user.password,
-            email=user.email
-        )
         db.add(new_user)
         db.commit()
         db.refresh(new_user)
-
-        return {'message': 'User created'}
-
-    except DatabaseError:
-        return {'message': 'Username has already existed'}
+        return {'user_id': new_user.id, 'username': new_user.username, 'name': new_user.name, 'email': new_user.email}
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="User with the same username or email already exists")
+    except DatabaseError as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Database error: " + str(e))
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="An unexpected error occurred: " + str(e))
 
 
 @router.get('/user')

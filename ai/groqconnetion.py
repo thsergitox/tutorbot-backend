@@ -40,12 +40,12 @@ class GroqConnection:
 
         return result_json_str
 
-    def ask_groq(self, answer):
+    def ask_groq(self, answer, name):
         chat_completion = self.client.chat.completions.create(
             messages=[
                 {
                     "role": "user",
-                    "content": f'Hola soy ricardo, ayudame con esta consulta: {answer}',
+                    "content": f'Hola soy {name}, ayudame con esta consulta: {answer}',
                 }
             ],
             model="llama3-8b-8192",
