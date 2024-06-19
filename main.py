@@ -10,6 +10,7 @@ app = FastAPI(
 )
 
 origins = [
+    'https://tutor-bot-phi.vercel.app',
     'http://localhost:5173'
 ]
 
