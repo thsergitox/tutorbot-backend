@@ -22,6 +22,7 @@ def get_db():
 
 class ModelRequest(BaseModel):
     num_preg: int
+    user_id: int
     topic: str
 
 class UpdateScoreRequest(BaseModel):
@@ -32,6 +33,7 @@ class UpdateScoreRequest(BaseModel):
 async def create(req: ModelRequest,  db: Session = Depends(get_db)):
     num_preg = req.num_preg
     topic = req.topic
+    user_id = req.user_id
 
     try:
         content = groqConnection.generate_exam(num_preg, topic)
@@ -40,7 +42,7 @@ async def create(req: ModelRequest,  db: Session = Depends(get_db)):
 
     try:
         new_questionnaire = Questionnaire(
-            user_id=1,
+            user_id=user_id,
             title=topic,
             content=content,
         )
