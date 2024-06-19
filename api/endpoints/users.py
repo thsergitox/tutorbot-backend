@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.exc import DatabaseError
 from sqlalchemy.orm import Session
@@ -26,7 +26,7 @@ def get_db():
 
 
 @router.post('/create')
-async def create_user(user: CreateUser,  db: Session = Depends(get_db)) -> dict:
+async def create_user(user: CreateUser, db: Session = Depends(get_db)) -> dict:
     try:
         new_user = User(
             username=user.username,
@@ -44,15 +44,18 @@ async def create_user(user: CreateUser,  db: Session = Depends(get_db)) -> dict:
         return {'message': 'Username has already existed'}
 
 
-
-
-@router.get('/{username}')
-async def get_user_data(username: str,  db: Session = Depends(get_db)) -> dict:
+@router.get('/user')
+async def get_user_data(username: str, password: str, email: str, db: Session = Depends(get_db)) -> dict:
     try:
         user = db.query(User).filter(User.username == username).first()
-        if user:
+        if user and user.password == password and user.email == email:
             return {'user_id': user.id, 'username': user.username, 'name': user.name, 'email': user.email}
         else:
-            return {'message': 'User not found'}
+            raise HTTPException(status_code=401, detail="Unauthorized")
+    except HTTPException as http_exc:
+        raise http_exc
     except DatabaseError:
-        return {'error': 'I dunno'}
+        return {'error': 'Database error'}
+        raise HTTPException(status_code=500, detail="Database error")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="An unexpected error occurred")
